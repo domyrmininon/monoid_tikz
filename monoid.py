@@ -273,7 +273,6 @@ class lcm:
             self.build_path(v, wor, left = False)
             del self.free[self.V.suffix]
             self.V = word(self.V.prefix + wor.prefix, wor.suffix)
-        print("found lcm", self.graph[0][0].equation.w1.prefix + self.U.prefix, "=", self.graph[0][0].equation.w2.prefix + self.V.prefix)
         
     def solve(self, max_depth = 50):
         #print("looking for the lcm of", self.graph[0][0].equation.w1.prefix, "and", self.graph[0][0].equation.w2.prefix, "with the rcomplement matrix", self.rco)
@@ -344,7 +343,42 @@ def random_mat(n):
             mat[i,j] = np.random.randint(2, 10)
             mat[j,i] = mat[i,j]
     return mat 
-                
+
+    
+def position_vertices(C):#add an attribute position to each vertex in the graph
+    if C.show:
+        print("positioning vertices")
+    for i in range(len(C.graph)):
+        l = len(C.graph[i])
+        for j in range(l):
+            v = C.graph[i][j]
+            v.position = (i,j-l/2)
+
+
+def latex_graph_lcm(C, space = 1.5, vert_offset = 0.1):
+    W = ""
+    C.solve()
+    position_vertices(C)
+    if C.show:
+        for i in range(len(C.graph)):
+            print(*[v.equation for v in C.graph[i]], sep= "|")
+    vo = space*vert_offset
+    W+="$$\\begin{tikzpicture}\n"
+    for i in range(len(C.graph)):
+        for v in C.graph[i]:
+            x = space*2*v.position[1]
+            y = -space*v.position[0]
+            W+="\\node[color={}] at ({}, {}) {{{}}};\n".format(v.color, x, y, v.equation.latex())
+    for e in C.edges:
+        ox = space*2*e.o.position[1]
+        oy = -space*e.o.position[0]
+        tx = space*2*e.t.position[1]
+        ty = -space*e.t.position[0]
+        W+="\\draw[color={}] ({},{}) -- ({},{}) node [midway, fill= white] {{{}}};\n".format(e.color, tx, ty+2*vo, ox,  oy -vo, e.label)
+    W+="\\end{tikzpicture}$$\n"
+    print("W is ", W)
+    return W
+
 class graph_arrow:
     def __init__(self, letter, start, end):
         self.letter = letter
@@ -484,5 +518,21 @@ def erco(rco, x, y):
         prefix += l.letter
     return signed_word(prefix)
     
+
+def latex_van_kampen(C, space = 1.5, flip = False):
+    W = ""
+    C.solve()
+    position_vertices(C)
+    W+="$$\\begin{tikzpicture}\n"
+    for e in C.edges:
+        ox = space*2*e.o.position[1]
+        oy = -space*e.o.position[0]
+        tx = space*2*e.t.position[1]
+        ty = -space*e.t.position[0]
+        if flip:
+            ox, oy, tx, ty = oy, ox, ty, tx
+        W+="\\draw[color={}, -Stealth] ({},{}) -- ({},{}) node [midway, fill= white] {{{}}};\n".format(e.color,tx, ty, ox, oy, e.label)
+    W+="\\end{tikzpicture}$$\n"
+    return W
 
     
